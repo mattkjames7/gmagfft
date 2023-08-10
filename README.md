@@ -1,0 +1,2 @@
+# gmagfft
+Ground magnetometer FFTs
