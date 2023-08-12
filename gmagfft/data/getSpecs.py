@@ -67,7 +67,7 @@ def _combineData(dataList):
 
     return out
 
-def getSpec(date,stn):
+def getSpecs(date,stn):
 
     ndate = np.size(date)
     if np.size(date) != 2:
