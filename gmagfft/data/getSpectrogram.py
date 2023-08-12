@@ -109,7 +109,10 @@ def getSpectrogram(data,Date):
 
 	for f,c in zip(fields,comps):
 
-		fft[c+'FFT'] = np.zeros((nw,nf),dtype='complex128')
+		fft[c+'Pow'] = np.zeros((nw,nf),dtype='float64')
+		fft[c+'Pha'] = np.zeros((nw,nf),dtype='float64')
+		fft[c+'Amp'] = np.zeros((nw,nf),dtype='float64')
+		fft[c+'FFT'] = np.zeros((nw,nf),dtype='complex128')		
 		Bfield[f] = np.zeros((nw,),dtype='float64')
 		for i in range(0,nw):
 			ind = np.arange(i0[i],i1[i])
@@ -120,9 +123,15 @@ def getSpectrogram(data,Date):
 				Bfield[f][i] = np.nanmean(data[f][ind])
 				
 				pw,am,ph,fr,fi,_ = ws.Fourier.FFT(t,b,OneSided=True)
+				fft[c+'Pow'][i] = pw
+				fft[c+'Amp'][i] = am
+				fft[c+'Pha'][i] = ph
 				fft[c+'FFT'][i] = fr + 1.0j*fi
 			else:
 				Bfield[f][i].fill(np.nan)
+				fft[c+'Pow'][i].fill(np.nan)
+				fft[c+'Amp'][i].fill(np.nan)
+				fft[c+'Pha'][i].fill(np.nan)
 				fft[c+'FFT'][i].fill(np.nan)
 
 	#limit frequency range
@@ -153,5 +162,28 @@ def getSpectrogram(data,Date):
 	for k in keys:
 		spec[k] = fft[k][usefft]
 
+	#magnetic field
+	spec['Bx'] = Bfield['Bx'][usefft]
+	spec['By'] = Bfield['By'][usefft]
+	spec['Bz'] = Bfield['Bz'][usefft]
 		
+	#unit vector for B
+	B = np.sqrt(spec['Bx']**2 + spec['By']**2 + spec['Bz']**2)
+	uBx = spec['Bx']/B
+	uBy = spec['By']/B
+	uBz = spec['Bz']/B
+		
+	#kvector
+	spec['kx'],spec['ky'],spec['kz'] = _GetKVectors(spec['xFFT'],spec['yFFT'],spec['zFFT'])
+	
+	#k.B
+	spec['kdotB'] = (spec['kx'].T*uBx + spec['ky'].T*uBy + spec['kz'].T*uBz).T 
+	
+	#calculate polarizations
+	pol = ws.Tools.Polarization2D(spec['xPow'],spec['xPha'],spec['yPow'],spec['yPha'],ReturnType='dict')
+	keys = list(pol.keys())
+	for k in keys:
+		spec[k] = pol[k]
+		
+				
 	return spec
