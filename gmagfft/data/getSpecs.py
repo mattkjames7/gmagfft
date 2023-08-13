@@ -36,7 +36,10 @@ def _combineData(dataList):
         for key in skeys:
             tmp = [d['spec'][key] for d in dataList if d is not None]
             if len(tmp) > 0:
-                sh = tmp[0].shape
+                if hasattr(tmp[0],'shape'):
+                    sh = tmp[0].shape
+                else:
+                    sh = ()
                 if key in ['freq','freqax']:
                     spec[key] = tmp[0]
                 elif key in ['nf']:

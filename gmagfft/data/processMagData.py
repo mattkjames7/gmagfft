@@ -139,7 +139,7 @@ def _filterData(data):
 
 
 	#filter the data
-	if not fmax is None:
+	if not fmax is None and fmax > 0:
 		print('Low-pass filtering B field')
 		Filter = fmax
 		data.Bx = ws.Filter.Filter(data.Bx,res,low=1/Filter)
@@ -147,7 +147,7 @@ def _filterData(data):
 		data.Bz = ws.Filter.Filter(data.Bz,res,low=1/Filter)
 
 		
-	if not fmin is None:
+	if not fmin is None and fmin > 0:
 		print('Removing Long-Period Background Stuff')
 		lpBx = ws.Filter.Filter(data.Bx,res,low=1/fmin,KeepDC=False)
 		lpBy = ws.Filter.Filter(data.By,res,low=1/fmin,KeepDC=False)

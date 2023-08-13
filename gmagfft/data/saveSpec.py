@@ -28,7 +28,7 @@ def _fftData(date,data):
     cfg = profile.get()
 
     print('Spectrogram')
-    spec = getSpectrogram(edata,date)
+    spec = getSpectrogram(data,date)
 
     return spec
 
@@ -37,7 +37,7 @@ def _magPos(date,stn,tspec):
 
     Date,ut = TT.ContUTtoDate(tspec)
     print('Mag Pos')
-    px,py,pz = gm.Trace.MagPairTracePos(estn,pstn,Date,ut)
+    px,py,pz = gm.Trace.MagTracePos(stn,Date,ut)
     st = gm.GetStationInfo(stn,date)
 
     mlat = st.mlat[0]
@@ -67,29 +67,49 @@ def saveSpec(date,stn):
         os.makedirs(pairPath)
 
     fname = pairPath + '/{:08d}.bin'.format(date)
-
-    try:
         #process the data
-        data = _processData(date,stn)
+    data = _processData(date,stn)
 
-        #fft the data
-        spec = _fftData(date,data)
+    #fft the data
+    spec = _fftData(date,data)
 
 
 
-        #get the magnetometer position for tracing
-        pos = _magPos(date,estn,pstn,tSpec)
+    #get the magnetometer position for tracing
+    pos = _magPos(date,stn,spec['utc'])
 
-        out = {
-            'data' : data,
-            'spec' : spec,
-            'pos' : pos
-        }
+    out = {
+        'data' : data,
+        'spec' : spec,
+        'pos' : pos
+    }
 
-        #save
+    #save
 
-        pf.SaveObject(out,fname)
-        print('Saved: ',fname)
-    except:
-        print('Saving {:s} failed, creating empty file...'.format(fname))
-        os.system('touch '+fname)
+    pf.SaveObject(out,fname)
+    print('Saved: ',fname)
+    # try:
+    #     #process the data
+    #     data = _processData(date,stn)
+
+    #     #fft the data
+    #     spec = _fftData(date,data)
+
+
+
+    #     #get the magnetometer position for tracing
+    #     pos = _magPos(date,estn,pstn,tSpec)
+
+    #     out = {
+    #         'data' : data,
+    #         'spec' : spec,
+    #         'pos' : pos
+    #     }
+
+    #     #save
+
+    #     pf.SaveObject(out,fname)
+    #     print('Saved: ',fname)
+    # except:
+    #     print('Saving {:s} failed, creating empty file...'.format(fname))
+    #     os.system('touch '+fname)

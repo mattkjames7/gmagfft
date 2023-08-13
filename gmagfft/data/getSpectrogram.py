@@ -174,7 +174,7 @@ def getSpectrogram(data,Date):
 	uBz = spec['Bz']/B
 		
 	#kvector
-	spec['kx'],spec['ky'],spec['kz'] = _GetKVectors(spec['xFFT'],spec['yFFT'],spec['zFFT'])
+	spec['kx'],spec['ky'],spec['kz'] = _getKVectors(spec['xFFT'],spec['yFFT'],spec['zFFT'])
 	
 	#k.B
 	spec['kdotB'] = (spec['kx'].T*uBx + spec['ky'].T*uBy + spec['kz'].T*uBz).T 
