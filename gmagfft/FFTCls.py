@@ -2,15 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from ..tools.checkPath import checkPath
+from .tools.checkPath import checkPath
 import wavespec as ws
 from .data.getSpecs import getSpecs
-from .. import Globals
+from . import globs
 import os
 import DateTimeTools as TT
 import PyFileIO as pf
 import groundmag as gm
-from ..tools.figText import figText
+from .tools.figText import figText
 from . import profile
 
 
@@ -21,12 +21,15 @@ class FFTCls(object):
 		
 		try:
 			self.data = getSpecs(Date,stn)
-			for k in self.data:
-				setattr(self,k,self.data[k])
+			self.spec = self.data['spec']
+			self.pos = self.data['pos']
+			for k in self.pos.keys():
+				setattr(self,k,self.pos[k])
+			self.data = self.data['data']
 			self.freq = self.spec['freq']
 			self.freqax = self.spec['freqax']
-			self.tspec = self.spec['utc']
-			self.tax = self.spec['utcax']
+			self.utc = self.spec['utc']
+			self.utcax = self.spec['utcax']
 		except Exception as e:
 			print('Something went wrong')
 			print(e)
@@ -34,13 +37,17 @@ class FFTCls(object):
 			return None
 
 				
-	def PlotData(self,ut=[0.0,24.0],Comp=['x','y','z'],fig=None,maps=[1,1,0,0],nox=False,noy=False,ShowPP=True,Filter=None,ShowLegend=False):
+	def PlotData(self,date=None,ut=[0.0,24.0],Comp=['x','y','z'],fig=None,maps=[1,1,0,0],nox=False,noy=False,Filter=None,ShowLegend=False,subtractMean=True):
 		
+		if date is None:
+			date = [np.min(self.date),np.max(self.date)]
+		
+
 		cols = {'x':'red',
 				'y':'lime',
 				'z':'blue'}
 		
-		utclim = TT.ContUT([self.date,self.date],ut)
+		utclim = TT.ContUT(date,ut)
 		
 		use = np.where((self.data.utc >= utclim[0]) & (self.data.utc <= utclim[1]))[0]
 		data = self.data[use]
@@ -58,6 +65,9 @@ class FFTCls(object):
 			b = data['B'+c]
 			if not Filter is None:
 				b = ws.Filter.Filter(b,1.0,1/Filter[0],1/Filter[1])
+			if subtractMean:
+				mu = np.nanmean(b)
+				b -= mu
 			ax.plot(data.utc,b,color=cols[c],label='$B_'+c+'$')
 		
 		ax.set_xlim(utclim)
@@ -82,12 +92,7 @@ class FFTCls(object):
 
 		ylim = ax.get_ylim()
 
-		if ShowPP:
-			nc,_,_,_,cutc = TestEqFP(self.stn,self.date,ut=ut)
-			if nc > 0:
-				ax.vlines(cutc,ylim[0],ylim[1],color='black',linewidth=2)
-				ax.vlines(cutc,ylim[0],ylim[1],color='lime',linestyle='--')
-						
+					
 						
 		ax.set_xlim(utclim)
 		ax.set_ylim(ylim)
@@ -182,10 +187,10 @@ class FFTCls(object):
 		return ax
 
 
-	def GetSpectrum(self,ut,Param):
+	def GetSpectrum(self,date,ut,Param):
 		
 		
-		utc = TT.ContUT(self.Date,ut)[0]
+		utc = TT.ContUT(date,ut)[0]
 		dt = np.abs(utc - self.utc)
 		I = np.argmin(dt)		
 		
@@ -194,10 +199,10 @@ class FFTCls(object):
 		return self.utc[I],self.freq,spec[I]
 	
 	
-	def PlotSpectrum(self,ut,Param,flim=None,fig=None,maps=[1,1,0,0],
+	def PlotSpectrum(self,date,ut,Param,flim=None,fig=None,maps=[1,1,0,0],
 				nox=False,noy=False,ylog=False,label=None,dy=0.0):
 		
-		utc,freq,spec = self.GetSpectrum(ut,Param)
+		utc,freq,spec = self.GetSpectrum(date,ut,Param)
 		
 		if fig is None:
 			fig = plt
@@ -237,12 +242,19 @@ class FFTCls(object):
 		
 		
 		
-	def Plot(self,Param,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
+	def Plot(self,Param,date=None,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
 				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True):
 		
+
+		if date is None:
+			date = [np.min(self.date),np.max(self.date)]
 		
+	
+		utclim = TT.ContUT(date,ut)
+
+
 		#get ut range
-		uset = np.where((self.ut >= ut[0]) & (self.ut <= ut[1]))[0]
+		uset = np.where((self.utc >= utclim[0]) & (self.utc <= utclim[1]))[0]
 		t0 = uset[0]
 		t1 = uset[-1] + 1
 		utc = self.utcax[t0:t1+1]
@@ -324,16 +336,17 @@ class FFTCls(object):
 		return t,ti,f,fi
 		
 		
-	def PlotPol(self,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],
+	def PlotPol(self,date=None,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],
 					Comp='x',nox=False,noy=False,Mult=None,MinAmp=0.0):
 						
-		
+		if date is None:
+			date = [np.min(self.date),np.max(self.date)]
 		
 		#get the peak power within frequency range
 		t,ti,f,fi = self._PowPeaks(Comp,flim)
 		
 		#limit time
-		tlim = TT.ContUT([self.date,self.date],ut)
+		tlim = TT.ContUT(date,ut)
 		use = np.where((t >= tlim[0]) & (t <= tlim[1]))[0]
 		t = t[use]
 		ti = ti[use]
