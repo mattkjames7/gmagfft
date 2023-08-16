@@ -12,6 +12,7 @@ import PyFileIO as pf
 import groundmag as gm
 from .tools.figText import figText
 from . import profile
+from . import background
 
 
 class FFTCls(object):
@@ -35,7 +36,17 @@ class FFTCls(object):
 			print(e)
 			self.fail = True
 			return None
+		
+		self.background = background.read(stn)
+		if self.background is None:
+			self.calculateBackground()
 
+
+	def calculateBackground(self):
+		fields = ['xPow','yPow','zPow','xAmp','yAmp','zAmp']
+		self.background = {}
+		for f in fields:
+			self.background[f] = background.getSpecBackground(self.spec[f])
 				
 	def PlotData(self,date=None,ut=[0.0,24.0],Comp=['x','y','z'],fig=None,maps=[1,1,0,0],nox=False,noy=False,Filter=None,ShowLegend=False,subtractMean=True):
 		
@@ -187,7 +198,7 @@ class FFTCls(object):
 		return ax
 
 
-	def GetSpectrum(self,date,ut,Param):
+	def GetSpectrum(self,date,ut,Param,removeBackground=False):
 		
 		
 		utc = TT.ContUT(date,ut)[0]
@@ -195,14 +206,45 @@ class FFTCls(object):
 		I = np.argmin(dt)		
 		
 		spec = self.spec[Param]
+
+		if removeBackground:
+			bg = self.getBackground(Param,removeBackground)
+			spec -= bg
+
+				
 		
 		return self.utc[I],self.freq,spec[I]
 	
 	
+	def getBackground(self,Param,perc):
+		if self.background is None:
+			return np.zeros(self.freq.size)
+		if perc in self.background[Param]:
+			bg = self.background[Param][perc]
+		else:
+			keys = np.array(list(self.background[Param].keys()))
+			dk = perc - keys
+			adk = np.abs(dk)
+			kind = adk.argmin()
+			if keys[kind] > perc:
+				k0 = keys[max(0,kind-1)]
+				k1 = k0 + 1
+			else:
+				k1 = keys[min(keys.size-1,kind+1)]
+				k0 = k1 - 1
+			bg0 = self.background[Param][k0]
+			bg1 = self.background[Param][k1]
+			db = bg1 - bg0
+			dkey = keys[k1] - keys[k0]
+			m = db/dkey
+			bg = bg0 + m*dk
+		return bg
+
+
 	def PlotSpectrum(self,date,ut,Param,flim=None,fig=None,maps=[1,1,0,0],
-				nox=False,noy=False,ylog=False,label=None,dy=0.0):
+				nox=False,noy=False,ylog=False,label=None,dy=0.0,removeBackground=False):
 		
-		utc,freq,spec = self.GetSpectrum(date,ut,Param)
+		utc,freq,spec = self.GetSpectrum(date,ut,Param,removeBackground)
 		
 		if fig is None:
 			fig = plt
@@ -243,7 +285,7 @@ class FFTCls(object):
 		
 		
 	def Plot(self,Param,date=None,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
-				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True):
+				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True,removeBackground=False):
 		
 
 		if date is None:
@@ -271,7 +313,14 @@ class FFTCls(object):
 		freq = self.freqax[f0:f1+1]*1000.0
 		
 		spec = self.spec[Param]
+	
+		if removeBackground:
+			bg = np.array([self.getBackground(Param,removeBackground)])
+			spec -= bg
+	
 		spec = spec[t0:t1,f0:f1]	
+
+	
 		
 		
 		ax = self._Plot(utc,freq,spec,fig=fig,maps=maps,zlog=zlog,
