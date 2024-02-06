@@ -147,6 +147,7 @@ def _filterData(data):
 		data.Bz = ws.Filter.Filter(data.Bz,res,low=1/Filter)
 
 		
+
 	if not fmin is None and fmin > 0:
 		print('Removing Long-Period Background Stuff')
 		lpBx = ws.Filter.Filter(data.Bx,res,low=1/fmin,KeepDC=False)

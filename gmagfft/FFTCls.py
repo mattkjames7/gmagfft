@@ -12,6 +12,7 @@ import PyFileIO as pf
 import groundmag as gm
 from .tools.figText import figText
 from . import profile
+import traceback
 from . import background
 
 
@@ -21,6 +22,7 @@ class FFTCls(object):
 		self.date = Date
 		
 		try:
+
 			self.data = getSpecs(Date,stn)
 			self.spec = self.data['spec']
 			self.pos = self.data['pos']
@@ -34,6 +36,8 @@ class FFTCls(object):
 		except Exception as e:
 			print('Something went wrong')
 			print(e)
+			print(traceback.format_exc())
+
 			self.fail = True
 			return None
 		
@@ -48,8 +52,9 @@ class FFTCls(object):
 		for f in fields:
 			self.background[f] = background.getSpecBackground(self.spec[f])
 				
-	def PlotData(self,date=None,ut=[0.0,24.0],Comp=['x','y','z'],fig=None,maps=[1,1,0,0],nox=False,noy=False,Filter=None,ShowLegend=False,subtractMean=True):
-		
+	def plotData(self,date=None,ut=[0.0,24.0],comp=['x','y','z'],fig=None,maps=[1,1,0,0],
+			nox=False,noy=False,filter=None,showLegend=False):
+
 		if date is None:
 			date = [np.min(self.date),np.max(self.date)]
 		
@@ -72,9 +77,9 @@ class FFTCls(object):
 		else:
 			ax = fig
 					
-		for c in Comp:
+		for c in comp:
 			b = data['B'+c]
-			if not Filter is None:
+			if not filter is None:
 				b = ws.Filter.Filter(b,1.0,1/Filter[0],1/Filter[1])
 			if subtractMean:
 				mu = np.nanmean(b)
@@ -103,14 +108,13 @@ class FFTCls(object):
 
 		ylim = ax.get_ylim()
 
-					
-						
+
 		ax.set_xlim(utclim)
 		ax.set_ylim(ylim)
-		if ShowLegend:
+		if showLegend:
 			ax.legend()
 
-		title = '{:s} mlat={:5.2f}, mlon={:5.2f}'.format(self.stn.upper(),self.mlat,self.mlon)
+		title = '{:s} mlat={:5.2f}, mlon={:5.2f}'.format(self.stn.upper(),self.pos["mlat"],self.pos["mlon"])
 		figText(ax,0.01,0.99,title,color='black',transform=ax.transAxes,ha='left',va='top')
 
 						
@@ -119,7 +123,7 @@ class FFTCls(object):
 
 		
 
-	def _Plot(self,xg,yg,grid,fig=None,maps=[1,1,0,0],zlog=False,scale=None,zlabel='',cmap='gnuplot',ShowColorbar=True):
+	def _plot(self,xg,yg,grid,fig=None,maps=[1,1,0,0],zlog=False,scale=None,zlabel='',cmap='gnuplot',ShowColorbar=True):
 		'''
 		Plot a 2D grid
 		
@@ -198,24 +202,23 @@ class FFTCls(object):
 		return ax
 
 
-	def GetSpectrum(self,date,ut,Param,removeBackground=False):
+	def getSpectrum(self,ut,param,removeBackground=False):
 		
 		
-		utc = TT.ContUT(date,ut)[0]
+		utc = TT.ContUT(self.date,ut)[0]
 		dt = np.abs(utc - self.utc)
 		I = np.argmin(dt)		
 		
-		spec = self.spec[Param]
+		spec = self.spec[param]
 
 		if removeBackground:
 			bg = self.getBackground(Param,removeBackground)
 			spec -= bg
-
-				
 		
 		return self.utc[I],self.freq,spec[I]
 	
 	
+
 	def getBackground(self,Param,perc):
 		if self.background is None:
 			return np.zeros(self.freq.size)
@@ -241,9 +244,9 @@ class FFTCls(object):
 		return bg
 
 
-	def PlotSpectrum(self,date,ut,Param,flim=None,fig=None,maps=[1,1,0,0],
+	def plotSpectrum(self,ut,param,flim=None,fig=None,maps=[1,1,0,0],
 				nox=False,noy=False,ylog=False,label=None,dy=0.0,removeBackground=False):
-		
+    
 		utc,freq,spec = self.GetSpectrum(date,ut,Param,removeBackground)
 		
 		if fig is None:
@@ -283,10 +286,10 @@ class FFTCls(object):
 		return ax		
 		
 		
-		
-	def Plot(self,Param,date=None,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
+
+	def plot(self,param,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
 				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True,removeBackground=False):
-		
+
 
 		if date is None:
 			date = [np.min(self.date),np.max(self.date)]
@@ -299,7 +302,7 @@ class FFTCls(object):
 		uset = np.where((self.utc >= utclim[0]) & (self.utc <= utclim[1]))[0]
 		t0 = uset[0]
 		t1 = uset[-1] + 1
-		utc = self.utcax[t0:t1+1]
+		utc = self.tax[t0:t1+1]
 				
 		#and frequency range
 		if flim is None:
@@ -312,18 +315,19 @@ class FFTCls(object):
 			f1 = usef[-1] + 1
 		freq = self.freqax[f0:f1+1]*1000.0
 		
-		spec = self.spec[Param]
-	
+		spec = self.spec[param]
+
 		if removeBackground:
 			bg = np.array([self.getBackground(Param,removeBackground)])
 			spec -= bg
 	
+
 		spec = spec[t0:t1,f0:f1]	
 
 	
 		
 		
-		ax = self._Plot(utc,freq,spec,fig=fig,maps=maps,zlog=zlog,
+		ax = self._plot(utc,freq,spec,fig=fig,maps=maps,zlog=zlog,
 				scale=scale,zlabel=zlabel,cmap=cmap,ShowColorbar=ShowColorbar)
 		
 		
@@ -351,14 +355,14 @@ class FFTCls(object):
 
 
 		
-		title = '{:s} mlat={:5.2f}, mlon={:5.2f}'.format(self.stn.upper(),self.mlat,self.mlon)
+		title = '{:s} mlat={:5.2f}, mlon={:5.2f}'.format(self.stn.upper(),self.pos["mlat"],self.pos["mlon"])
 		figText(ax,0.01,0.99,title,color='black',transform=ax.transAxes,ha='left',va='top')
 		
 		return ax
 	
 	
 		
-	def _PowPeaks(self,Comp,flim):
+	def _powPeaks(self,Comp,flim):
 		
 		
 		n = np.size(self.utc)
@@ -385,7 +389,7 @@ class FFTCls(object):
 		return t,ti,f,fi
 		
 		
-	def PlotPol(self,date=None,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],
+	def plotPol(self,date=None,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],
 					Comp='x',nox=False,noy=False,Mult=None,MinAmp=0.0):
 						
 		if date is None:
@@ -455,7 +459,7 @@ class FFTCls(object):
 		
 		return ax
 	
-	def _GetTraceFP(self):
+	def _getTraceFP(self):
 		
 		if not hasattr(self,'Trace'):
 			self.Trace = gm.Trace.InterpMagFP(self.stn,self.utc)
@@ -466,6 +470,6 @@ class FFTCls(object):
 		return self.Trace
 
 
-	def PlotEqFP(self,ut=[0.0,24.0],fig=None,maps=[1,1,0,0]):
+	def plotEqFP(self,ut=[0.0,24.0],fig=None,maps=[1,1,0,0]):
 		
-		return PlotEqMagFP(self.stn,self.date,ut=ut,fig=fig,maps=maps)
+		return plotEqMagFP(self.stn,self.date,ut=ut,fig=fig,maps=maps)

@@ -5,7 +5,7 @@ import os
 
 def readAvailability(stn):
 	
-	
+
 	fpath = globs.dataPath + '/availability'	
 	fname = fpath + '/{:s}.bin'.format(stn)
 	

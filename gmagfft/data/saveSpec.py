@@ -9,6 +9,7 @@ import wavespec as ws
 import groundmag as gm
 import DateTimeTools as TT
 import os
+import traceback
 
 def _processData(date,stn):
 
@@ -57,7 +58,7 @@ def _magPos(date,stn,tspec):
     return out
 
 
-def saveSpec(date,stn):
+def saveSpec(date,stn,debug=False):
     
     cfg = profile.get()
     checkPath(cfg['specPath'])
@@ -78,7 +79,8 @@ def saveSpec(date,stn):
 
 
         #get the magnetometer position for tracing
-        pos = _magPos(date,stn,spec['utc'])
+        pos = _magPos(date,stn,spec["utc"])
+
 
         out = {
             'data' : data,
@@ -90,7 +92,10 @@ def saveSpec(date,stn):
 
         pf.SaveObject(out,fname)
         print('Saved: ',fname)
+    except Exception as e:
+        print('Saving {:s} failed, creating empty file...'.format(fname))
+        os.system('touch '+fname)
+        if debug:
+            print(f"Error: {e}")
+            print(traceback.format_exc())
 
-    except:
-         print('Saving {:s} failed, creating empty file...'.format(fname))
-         os.system('touch '+fname)
