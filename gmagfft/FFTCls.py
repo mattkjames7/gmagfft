@@ -29,6 +29,7 @@ class FFTCls(object):
 			self.tspec = self.spec['utc']
 			self.tax = self.spec['utcax']
 			self.utc = self.tspec
+			self.ut = self.utc % 24.0
 		except Exception as e:
 			print('Something went wrong')
 			print(e)
@@ -244,7 +245,7 @@ class FFTCls(object):
 		uset = np.where((self.ut >= ut[0]) & (self.ut <= ut[1]))[0]
 		t0 = uset[0]
 		t1 = uset[-1] + 1
-		utc = self.utcax[t0:t1+1]
+		utc = self.tax[t0:t1+1]
 				
 		#and frequency range
 		if flim is None:
@@ -261,7 +262,7 @@ class FFTCls(object):
 		spec = spec[t0:t1,f0:f1]	
 		
 		
-		ax = self._Plot(utc,freq,spec,fig=fig,maps=maps,zlog=zlog,
+		ax = self._plot(utc,freq,spec,fig=fig,maps=maps,zlog=zlog,
 				scale=scale,zlabel=zlabel,cmap=cmap,ShowColorbar=ShowColorbar)
 		
 		
@@ -289,7 +290,7 @@ class FFTCls(object):
 
 
 		
-		title = '{:s} mlat={:5.2f}, mlon={:5.2f}'.format(self.stn.upper(),self.mlat,self.mlon)
+		title = '{:s} mlat={:5.2f}, mlon={:5.2f}'.format(self.stn.upper(),self.pos["mlat"],self.pos["mlon"])
 		figText(ax,0.01,0.99,title,color='black',transform=ax.transAxes,ha='left',va='top')
 		
 		return ax
