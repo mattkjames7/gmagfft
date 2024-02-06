@@ -37,7 +37,8 @@ class FFTCls(object):
 			return None
 
 				
-	def plotData(self,ut=[0.0,24.0],Comp=['x','y','z'],fig=None,maps=[1,1,0,0],nox=False,noy=False,ShowPP=True,Filter=None,ShowLegend=False):
+	def plotData(self,ut=[0.0,24.0],comp=['x','y','z'],fig=None,maps=[1,1,0,0],
+			nox=False,noy=False,filter=None,showLegend=False):
 		
 		cols = {'x':'red',
 				'y':'lime',
@@ -57,9 +58,9 @@ class FFTCls(object):
 		else:
 			ax = fig
 					
-		for c in Comp:
+		for c in comp:
 			b = data['B'+c]
-			if not Filter is None:
+			if not filter is None:
 				b = ws.Filter.Filter(b,1.0,1/Filter[0],1/Filter[1])
 			ax.plot(data.utc,b,color=cols[c],label='$B_'+c+'$')
 		
@@ -85,19 +86,13 @@ class FFTCls(object):
 
 		ylim = ax.get_ylim()
 
-		if ShowPP:
-			nc,_,_,_,cutc = TestEqFP(self.stn,self.date,ut=ut)
-			if nc > 0:
-				ax.vlines(cutc,ylim[0],ylim[1],color='black',linewidth=2)
-				ax.vlines(cutc,ylim[0],ylim[1],color='lime',linestyle='--')
-						
 						
 		ax.set_xlim(utclim)
 		ax.set_ylim(ylim)
-		if ShowLegend:
+		if showLegend:
 			ax.legend()
 
-		title = '{:s} mlat={:5.2f}, mlon={:5.2f}'.format(self.stn.upper(),self.mlat,self.mlon)
+		title = '{:s} mlat={:5.2f}, mlon={:5.2f}'.format(self.stn.upper(),self.pos["mlat"],self.pos["mlon"])
 		figText(ax,0.01,0.99,title,color='black',transform=ax.transAxes,ha='left',va='top')
 
 						
