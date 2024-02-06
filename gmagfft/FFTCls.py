@@ -28,6 +28,7 @@ class FFTCls(object):
 			self.freqax = self.spec['freqax']
 			self.tspec = self.spec['utc']
 			self.tax = self.spec['utcax']
+			self.utc = self.tspec
 		except Exception as e:
 			print('Something went wrong')
 			print(e)
@@ -180,22 +181,22 @@ class FFTCls(object):
 		return ax
 
 
-	def getSpectrum(self,ut,Param):
+	def getSpectrum(self,ut,param):
 		
 		
-		utc = TT.ContUT(self.Date,ut)[0]
+		utc = TT.ContUT(self.date,ut)[0]
 		dt = np.abs(utc - self.utc)
 		I = np.argmin(dt)		
 		
-		spec = self.spec[Param]
+		spec = self.spec[param]
 		
 		return self.utc[I],self.freq,spec[I]
 	
 	
-	def plotSpectrum(self,ut,Param,flim=None,fig=None,maps=[1,1,0,0],
+	def plotSpectrum(self,ut,param,flim=None,fig=None,maps=[1,1,0,0],
 				nox=False,noy=False,ylog=False,label=None,dy=0.0):
 		
-		utc,freq,spec = self.GetSpectrum(ut,Param)
+		utc,freq,spec = self.GetSpectrum(ut,param)
 		
 		if fig is None:
 			fig = plt
@@ -235,7 +236,7 @@ class FFTCls(object):
 		
 		
 		
-	def plot(self,Param,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
+	def plot(self,param,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
 				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True):
 		
 		
@@ -256,7 +257,7 @@ class FFTCls(object):
 			f1 = usef[-1] + 1
 		freq = self.freqax[f0:f1+1]*1000.0
 		
-		spec = self.spec[Param]
+		spec = self.spec[param]
 		spec = spec[t0:t1,f0:f1]	
 		
 		
