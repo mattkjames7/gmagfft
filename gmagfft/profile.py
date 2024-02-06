@@ -26,18 +26,18 @@ def create(name='default',**kwargs):
 
 
     profilePath = globs.dataPath + '/profiles/{:s}'.format(name)
-
-    if os.path.isdir(profilePath):
+    fname = profilePath + '/config.cfg'
+    if os.path.isfile(fname):
         print('Profile appears to exist, returning...')
         return
-    else:
+    
+    if not os.path.isdir(profilePath):
         os.makedirs(profilePath)
 
     out['path'] = profilePath
     out['specPath'] = profilePath + '/spec'
     
-
-    fname = profilePath + '/config.cfg'
+   
     with open(fname,'w') as f:
         json.dump(out,f,indent=2)
     print('Saved: {:s}'.format(fname))

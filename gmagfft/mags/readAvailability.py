@@ -5,8 +5,8 @@ import os
 
 def readAvailability(stn):
 	
-	
-	fpath = globs.dataPath + '/Availability'	
+
+	fpath = globs.dataPath + '/availability'	
 	fname = fpath + '/{:s}.bin'.format(stn)
 	
 	if not os.path.isfile(fname):

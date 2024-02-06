@@ -39,6 +39,7 @@ def _combineData(dataList):
                 spec[key] = sum(tmp)
             elif len(tmp) > 0:
                 sh = tmp[0].shape
+
                 if key in ['freq','freqax']:
                     spec[key] = tmp[0]
                 elif key in ['nf']:

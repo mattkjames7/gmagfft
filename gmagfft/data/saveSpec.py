@@ -68,7 +68,7 @@ def saveSpec(date,stn,debug=False):
         os.makedirs(pairPath)
 
     fname = pairPath + '/{:08d}.bin'.format(date)
-
+    
     try:
         #process the data
         data = _processData(date,stn)
@@ -80,6 +80,7 @@ def saveSpec(date,stn,debug=False):
 
         #get the magnetometer position for tracing
         pos = _magPos(date,stn,spec["utc"])
+
 
         out = {
             'data' : data,
@@ -97,3 +98,4 @@ def saveSpec(date,stn,debug=False):
         if debug:
             print(f"Error: {e}")
             print(traceback.format_exc())
+

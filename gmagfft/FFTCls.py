@@ -13,6 +13,8 @@ import groundmag as gm
 from .tools.figText import figText
 from . import profile
 import traceback
+from . import background
+
 
 class FFTCls(object):
 	def __init__(self,stn,Date):
@@ -20,16 +22,17 @@ class FFTCls(object):
 		self.date = Date
 		
 		try:
-			self.specData = getSpecs(Date,stn)
-			
-			for k in self.specData.keys():
-				setattr(self,k,self.specData[k])
+
+			self.data = getSpecs(Date,stn)
+			self.spec = self.data['spec']
+			self.pos = self.data['pos']
+			for k in self.pos.keys():
+				setattr(self,k,self.pos[k])
+			self.data = self.data['data']
 			self.freq = self.spec['freq']
 			self.freqax = self.spec['freqax']
-			self.tspec = self.spec['utc']
-			self.tax = self.spec['utcax']
-			self.utc = self.tspec
-			self.ut = self.utc % 24.0
+			self.utc = self.spec['utc']
+			self.utcax = self.spec['utcax']
 		except Exception as e:
 			print('Something went wrong')
 			print(e)
@@ -37,16 +40,30 @@ class FFTCls(object):
 
 			self.fail = True
 			return None
-
-				
-	def plotData(self,ut=[0.0,24.0],comp=['x','y','z'],fig=None,maps=[1,1,0,0],
-			nox=False,noy=False,filter=None,showLegend=False):
 		
+		self.background = background.read(stn)
+		if self.background is None:
+			self.calculateBackground()
+
+
+	def calculateBackground(self):
+		fields = ['xPow','yPow','zPow','xAmp','yAmp','zAmp']
+		self.background = {}
+		for f in fields:
+			self.background[f] = background.getSpecBackground(self.spec[f])
+				
+	def plotData(self,date=None,ut=[0.0,24.0],comp=['x','y','z'],fig=None,maps=[1,1,0,0],
+			nox=False,noy=False,filter=None,showLegend=False):
+
+		if date is None:
+			date = [np.min(self.date),np.max(self.date)]
+		
+
 		cols = {'x':'red',
 				'y':'lime',
 				'z':'blue'}
 		
-		utclim = TT.ContUT([self.date,self.date],ut)
+		utclim = TT.ContUT(date,ut)
 		
 		use = np.where((self.data.utc >= utclim[0]) & (self.data.utc <= utclim[1]))[0]
 		data = self.data[use]
@@ -64,6 +81,9 @@ class FFTCls(object):
 			b = data['B'+c]
 			if not filter is None:
 				b = ws.Filter.Filter(b,1.0,1/Filter[0],1/Filter[1])
+			if subtractMean:
+				mu = np.nanmean(b)
+				b -= mu
 			ax.plot(data.utc,b,color=cols[c],label='$B_'+c+'$')
 		
 		ax.set_xlim(utclim)
@@ -88,7 +108,7 @@ class FFTCls(object):
 
 		ylim = ax.get_ylim()
 
-						
+
 		ax.set_xlim(utclim)
 		ax.set_ylim(ylim)
 		if showLegend:
@@ -182,7 +202,7 @@ class FFTCls(object):
 		return ax
 
 
-	def getSpectrum(self,ut,param):
+	def getSpectrum(self,ut,param,removeBackground=False):
 		
 		
 		utc = TT.ContUT(self.date,ut)[0]
@@ -190,14 +210,44 @@ class FFTCls(object):
 		I = np.argmin(dt)		
 		
 		spec = self.spec[param]
+
+		if removeBackground:
+			bg = self.getBackground(Param,removeBackground)
+			spec -= bg
 		
 		return self.utc[I],self.freq,spec[I]
 	
 	
+
+	def getBackground(self,Param,perc):
+		if self.background is None:
+			return np.zeros(self.freq.size)
+		if perc in self.background[Param]:
+			bg = self.background[Param][perc]
+		else:
+			keys = np.array(list(self.background[Param].keys()))
+			dk = perc - keys
+			adk = np.abs(dk)
+			kind = adk.argmin()
+			if keys[kind] > perc:
+				k0 = keys[max(0,kind-1)]
+				k1 = k0 + 1
+			else:
+				k1 = keys[min(keys.size-1,kind+1)]
+				k0 = k1 - 1
+			bg0 = self.background[Param][k0]
+			bg1 = self.background[Param][k1]
+			db = bg1 - bg0
+			dkey = keys[k1] - keys[k0]
+			m = db/dkey
+			bg = bg0 + m*dk
+		return bg
+
+
 	def plotSpectrum(self,ut,param,flim=None,fig=None,maps=[1,1,0,0],
-				nox=False,noy=False,ylog=False,label=None,dy=0.0):
-		
-		utc,freq,spec = self.getSpectrum(ut,param)
+				nox=False,noy=False,ylog=False,label=None,dy=0.0,removeBackground=False):
+    
+		utc,freq,spec = self.GetSpectrum(date,ut,Param,removeBackground)
 		
 		if fig is None:
 			fig = plt
@@ -236,13 +286,20 @@ class FFTCls(object):
 		return ax		
 		
 		
-		
+
 	def plot(self,param,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
-				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True):
+				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True,removeBackground=False):
+
+
+		if date is None:
+			date = [np.min(self.date),np.max(self.date)]
 		
-		
+	
+		utclim = TT.ContUT(date,ut)
+
+
 		#get ut range
-		uset = np.where((self.ut >= ut[0]) & (self.ut <= ut[1]))[0]
+		uset = np.where((self.utc >= utclim[0]) & (self.utc <= utclim[1]))[0]
 		t0 = uset[0]
 		t1 = uset[-1] + 1
 		utc = self.tax[t0:t1+1]
@@ -259,7 +316,15 @@ class FFTCls(object):
 		freq = self.freqax[f0:f1+1]*1000.0
 		
 		spec = self.spec[param]
+
+		if removeBackground:
+			bg = np.array([self.getBackground(Param,removeBackground)])
+			spec -= bg
+	
+
 		spec = spec[t0:t1,f0:f1]	
+
+	
 		
 		
 		ax = self._plot(utc,freq,spec,fig=fig,maps=maps,zlog=zlog,
@@ -324,16 +389,17 @@ class FFTCls(object):
 		return t,ti,f,fi
 		
 		
-	def plotPol(self,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],
+	def plotPol(self,date=None,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],
 					Comp='x',nox=False,noy=False,Mult=None,MinAmp=0.0):
 						
-		
+		if date is None:
+			date = [np.min(self.date),np.max(self.date)]
 		
 		#get the peak power within frequency range
 		t,ti,f,fi = self._PowPeaks(Comp,flim)
 		
 		#limit time
-		tlim = TT.ContUT([self.date,self.date],ut)
+		tlim = TT.ContUT(date,ut)
 		use = np.where((t >= tlim[0]) & (t <= tlim[1]))[0]
 		t = t[use]
 		ti = ti[use]
