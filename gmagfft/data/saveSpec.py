@@ -9,6 +9,7 @@ import wavespec as ws
 import groundmag as gm
 import DateTimeTools as TT
 import os
+import traceback
 
 def _processData(date,stn):
 
@@ -28,7 +29,7 @@ def _fftData(date,data):
     cfg = profile.get()
 
     print('Spectrogram')
-    spec = getSpectrogram(edata,date)
+    spec = getSpectrogram(data,date)
 
     return spec
 
@@ -37,7 +38,7 @@ def _magPos(date,stn,tspec):
 
     Date,ut = TT.ContUTtoDate(tspec)
     print('Mag Pos')
-    px,py,pz = gm.Trace.MagPairTracePos(estn,pstn,Date,ut)
+    px,py,pz = gm.Trace.MagTracePos(stn,Date,ut)
     st = gm.GetStationInfo(stn,date)
 
     mlat = st.mlat[0]
@@ -57,7 +58,7 @@ def _magPos(date,stn,tspec):
     return out
 
 
-def saveSpec(date,stn):
+def saveSpec(date,stn,debug=False):
     
     cfg = profile.get()
     checkPath(cfg['specPath'])
@@ -78,7 +79,7 @@ def saveSpec(date,stn):
 
 
         #get the magnetometer position for tracing
-        pos = _magPos(date,estn,pstn,tSpec)
+        pos = _magPos(date,stn,spec["utc"])
 
         out = {
             'data' : data,
@@ -90,6 +91,9 @@ def saveSpec(date,stn):
 
         pf.SaveObject(out,fname)
         print('Saved: ',fname)
-    except:
+    except Exception as e:
         print('Saving {:s} failed, creating empty file...'.format(fname))
         os.system('touch '+fname)
+        if debug:
+            print(f"Error: {e}")
+            print(traceback.format_exc())

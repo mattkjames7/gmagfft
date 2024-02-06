@@ -2,15 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from ..tools.checkPath import checkPath
+from .tools.checkPath import checkPath
 import wavespec as ws
 from .data.getSpecs import getSpecs
-from .. import Globals
+from . import globs
 import os
 import DateTimeTools as TT
 import PyFileIO as pf
 import groundmag as gm
-from ..tools.figText import figText
+from .tools.figText import figText
 from . import profile
 
 
@@ -34,7 +34,7 @@ class FFTCls(object):
 			return None
 
 				
-	def PlotData(self,ut=[0.0,24.0],Comp=['x','y','z'],fig=None,maps=[1,1,0,0],nox=False,noy=False,ShowPP=True,Filter=None,ShowLegend=False):
+	def plotData(self,ut=[0.0,24.0],Comp=['x','y','z'],fig=None,maps=[1,1,0,0],nox=False,noy=False,ShowPP=True,Filter=None,ShowLegend=False):
 		
 		cols = {'x':'red',
 				'y':'lime',
@@ -103,7 +103,7 @@ class FFTCls(object):
 
 		
 
-	def _Plot(self,xg,yg,grid,fig=None,maps=[1,1,0,0],zlog=False,scale=None,zlabel='',cmap='gnuplot',ShowColorbar=True):
+	def _plot(self,xg,yg,grid,fig=None,maps=[1,1,0,0],zlog=False,scale=None,zlabel='',cmap='gnuplot',ShowColorbar=True):
 		'''
 		Plot a 2D grid
 		
@@ -182,7 +182,7 @@ class FFTCls(object):
 		return ax
 
 
-	def GetSpectrum(self,ut,Param):
+	def getSpectrum(self,ut,Param):
 		
 		
 		utc = TT.ContUT(self.Date,ut)[0]
@@ -194,7 +194,7 @@ class FFTCls(object):
 		return self.utc[I],self.freq,spec[I]
 	
 	
-	def PlotSpectrum(self,ut,Param,flim=None,fig=None,maps=[1,1,0,0],
+	def plotSpectrum(self,ut,Param,flim=None,fig=None,maps=[1,1,0,0],
 				nox=False,noy=False,ylog=False,label=None,dy=0.0):
 		
 		utc,freq,spec = self.GetSpectrum(ut,Param)
@@ -237,7 +237,7 @@ class FFTCls(object):
 		
 		
 		
-	def Plot(self,Param,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
+	def plot(self,Param,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
 				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True):
 		
 		
@@ -297,7 +297,7 @@ class FFTCls(object):
 	
 	
 		
-	def _PowPeaks(self,Comp,flim):
+	def _powPeaks(self,Comp,flim):
 		
 		
 		n = np.size(self.utc)
@@ -324,7 +324,7 @@ class FFTCls(object):
 		return t,ti,f,fi
 		
 		
-	def PlotPol(self,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],
+	def plotPol(self,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],
 					Comp='x',nox=False,noy=False,Mult=None,MinAmp=0.0):
 						
 		
@@ -393,7 +393,7 @@ class FFTCls(object):
 		
 		return ax
 	
-	def _GetTraceFP(self):
+	def _getTraceFP(self):
 		
 		if not hasattr(self,'Trace'):
 			self.Trace = gm.Trace.InterpMagFP(self.stn,self.utc)
@@ -404,6 +404,6 @@ class FFTCls(object):
 		return self.Trace
 
 
-	def PlotEqFP(self,ut=[0.0,24.0],fig=None,maps=[1,1,0,0]):
+	def plotEqFP(self,ut=[0.0,24.0],fig=None,maps=[1,1,0,0]):
 		
-		return PlotEqMagFP(self.stn,self.date,ut=ut,fig=fig,maps=maps)
+		return plotEqMagFP(self.stn,self.date,ut=ut,fig=fig,maps=maps)
