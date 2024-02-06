@@ -196,7 +196,7 @@ class FFTCls(object):
 	def plotSpectrum(self,ut,param,flim=None,fig=None,maps=[1,1,0,0],
 				nox=False,noy=False,ylog=False,label=None,dy=0.0):
 		
-		utc,freq,spec = self.GetSpectrum(ut,param)
+		utc,freq,spec = self.getSpectrum(ut,param)
 		
 		if fig is None:
 			fig = plt
