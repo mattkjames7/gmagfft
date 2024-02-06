@@ -1,7 +1,7 @@
 import numpy as np
 import groundmag as gm
 import PyFileIO as pf
-from ..Tools.checkPath import checkPath
+from ..tools.checkPath import checkPath
 from .. import globs
 
 def saveAvailability(stn):
