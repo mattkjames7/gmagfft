@@ -12,7 +12,7 @@ import PyFileIO as pf
 import groundmag as gm
 from .tools.figText import figText
 from . import profile
-
+import traceback
 
 class FFTCls(object):
 	def __init__(self,stn,Date):
@@ -20,9 +20,10 @@ class FFTCls(object):
 		self.date = Date
 		
 		try:
-			self.data = getSpecs(Date,stn)
-			for k in self.data:
-				setattr(self,k,self.data[k])
+			self.specData = getSpecs(Date,stn)
+			
+			for k in self.specData.keys():
+				setattr(self,k,self.specData[k])
 			self.freq = self.spec['freq']
 			self.freqax = self.spec['freqax']
 			self.tspec = self.spec['utc']
@@ -30,6 +31,8 @@ class FFTCls(object):
 		except Exception as e:
 			print('Something went wrong')
 			print(e)
+			print(traceback.format_exc())
+
 			self.fail = True
 			return None
 
