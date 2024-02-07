@@ -442,6 +442,7 @@ class FFTCls(object):
 			ax.set_xticklabels(lab)
 		else:
 			ax.set_xlabel('UT')
+			TT.DTPlotLabel(ax)
 		yl = ax.get_ylim()
 		ax.set_ylim(yl)
 		if noy:
