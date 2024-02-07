@@ -212,20 +212,20 @@ class FFTCls(object):
 		spec = self.spec[param]
 
 		if removeBackground:
-			bg = self.getBackground(Param,removeBackground)
+			bg = self.getBackground(param,removeBackground)
 			spec -= bg
 		
 		return self.utc[I],self.freq,spec[I]
 	
 	
 
-	def getBackground(self,Param,perc):
+	def getBackground(self,param,perc):
 		if self.background is None:
 			return np.zeros(self.freq.size)
-		if perc in self.background[Param]:
-			bg = self.background[Param][perc]
+		if perc in self.background[param]:
+			bg = self.background[param][perc]
 		else:
-			keys = np.array(list(self.background[Param].keys()))
+			keys = np.array(list(self.background[param].keys()))
 			dk = perc - keys
 			adk = np.abs(dk)
 			kind = adk.argmin()
@@ -235,8 +235,8 @@ class FFTCls(object):
 			else:
 				k1 = keys[min(keys.size-1,kind+1)]
 				k0 = k1 - 1
-			bg0 = self.background[Param][k0]
-			bg1 = self.background[Param][k1]
+			bg0 = self.background[param][k0]
+			bg1 = self.background[param][k1]
 			db = bg1 - bg0
 			dkey = keys[k1] - keys[k0]
 			m = db/dkey
@@ -247,7 +247,7 @@ class FFTCls(object):
 	def plotSpectrum(self,ut,param,flim=None,fig=None,maps=[1,1,0,0],
 				nox=False,noy=False,ylog=False,label=None,dy=0.0,removeBackground=False):
     
-		utc,freq,spec = self.GetSpectrum(date,ut,Param,removeBackground)
+		utc,freq,spec = self.GetSpectrum(date,ut,param,removeBackground)
 		
 		if fig is None:
 			fig = plt
@@ -318,7 +318,7 @@ class FFTCls(object):
 		spec = self.spec[param]
 
 		if removeBackground:
-			bg = np.array([self.getBackground(Param,removeBackground)])
+			bg = np.array([self.getBackground(param,removeBackground)])
 			spec -= bg
 	
 
