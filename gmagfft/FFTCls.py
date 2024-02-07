@@ -290,7 +290,7 @@ class FFTCls(object):
 		
 		
 
-	def plot(self,param,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
+	def plot(self,param,date=None,ut=[0.0,24.0],flim=None,fig=None,maps=[1,1,0,0],zlog=False,scale=None,
 				cmap='gnuplot2',zlabel='',nox=False,noy=False,ShowPP=True,ShowColorbar=True,removeBackground=False):
 
 
@@ -305,7 +305,7 @@ class FFTCls(object):
 		uset = np.where((self.utc >= utclim[0]) & (self.utc <= utclim[1]))[0]
 		t0 = uset[0]
 		t1 = uset[-1] + 1
-		utc = self.tax[t0:t1+1]
+		utc = self.utcax[t0:t1+1]
 				
 		#and frequency range
 		if flim is None:
@@ -472,8 +472,3 @@ class FFTCls(object):
 				self.Trace = gm.Trace.InterpMagFP(self.stn,self.utc)
 		
 		return self.Trace
-
-
-	def plotEqFP(self,ut=[0.0,24.0],fig=None,maps=[1,1,0,0]):
-		
-		return plotEqMagFP(self.stn,self.date,ut=ut,fig=fig,maps=maps)
