@@ -244,10 +244,13 @@ class FFTCls(object):
 		return bg
 
 
-	def plotSpectrum(self,ut,param,flim=None,fig=None,maps=[1,1,0,0],
+	def plotSpectrum(self,ut,param,date=None,flim=None,fig=None,maps=[1,1,0,0],
 				nox=False,noy=False,ylog=False,label=None,dy=0.0,removeBackground=False):
-    
-		utc,freq,spec = self.GetSpectrum(date,ut,param,removeBackground)
+
+		if date is None:
+			date = [np.min(self.date),np.max(self.date)]
+
+		utc,freq,spec = self.getSpectrum(date,ut,param,removeBackground)
 		
 		if fig is None:
 			fig = plt
@@ -396,7 +399,7 @@ class FFTCls(object):
 			date = [np.min(self.date),np.max(self.date)]
 		
 		#get the peak power within frequency range
-		t,ti,f,fi = self._PowPeaks(Comp,flim)
+		t,ti,f,fi = self._powPeaks(Comp,flim)
 		
 		#limit time
 		tlim = TT.ContUT(date,ut)
