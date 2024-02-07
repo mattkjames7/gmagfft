@@ -109,9 +109,20 @@ where `fftobj` is an instance of `FFTCls` which contains methods for
 plotting spectra and input data. An example is using `plot()`:
 
 ```python
-fftobj.plot("xPow")
+fftobj.plot("xPow",flim=[0.0,10.0])
 ```
 
 which should produce a plot like this:
 
-![](example.png)
+![](example-spec.png)
+
+Or we could plot the polarization ellipses at the frequency of the peak
+wave power in each spectrum using `plotPol()`:
+
+```python
+fftobj.plotPol(Comp="x")
+```
+
+which produces the mess below (this can be really nicely organised when used
+on data containing fairly obvious waves)
+![](example-pol.png)
